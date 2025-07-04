@@ -34,7 +34,7 @@ public class Direccion {
     @JsonIgnore
     @JoinColumn(name="idusuario")
     @ManyToOne
-    public Usuario usuario;
+    public Usuario Usuario;
 
     public int getIdDireccion() {
         return idDireccion;
@@ -68,13 +68,14 @@ public class Direccion {
         this.NumeroExterior = NumeroExterior;
     }
 
-    public Colonia getColonia() {
-        return Colonia;
-    }
 
-    public void setColonia(Colonia Colonia) {
-        this.Colonia = Colonia;
-    }
+
+
+    
+    
+    
+    
+
 
     
 }

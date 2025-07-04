@@ -10,13 +10,13 @@ public interface IUsuarioJPADAO {
 
     Result DeleteUsuario(int idUsuario);
 
-    Result DeleteDireccion(int idDireccion);
+    Result DeleteDireccion(int idUsuario, int idDireccion);
     
     Result UpdateUsario(UsuarioDireccion usuarioDireccion);
     
-    Result UpdateDireccion(UsuarioDireccion usuarioDireccion);
+    Result UpdateDireccion(int idUsuario, int idDireccion, Direccion direccionJSON);
     
-    Result AddDireccion(UsuarioDireccion usuarioDireccion);
+    Result AddDireccion(UsuarioDireccion usuarioDireccion); 
     
     Result GetAll();
     

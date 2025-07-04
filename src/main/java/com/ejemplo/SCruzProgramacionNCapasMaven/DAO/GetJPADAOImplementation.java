@@ -7,6 +7,7 @@ import com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Pais;
 import com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Roll;
 import com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Result;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,103 +22,133 @@ public class GetJPADAOImplementation implements IGetJPADAO {
     @Override
     public Result GetRoll() {
         Result result = new Result();
-
         try {
-            List<Roll> rolls = entityManager.createQuery("FROM Roll", Roll.class).getResultList();
+            TypedQuery<Roll> rollsQuery = entityManager.createQuery(
+                    "FROM Roll", Roll.class);
 
-            result.objects = new ArrayList<>(rolls);
-            result.correct = true;
+            List<Roll> rolls = rollsQuery.getResultList();
+            result.objects = new ArrayList<>();
+
+            if (!rolls.isEmpty() && rolls != null) {
+                for (Roll rollJPA : rolls) {
+                    Roll roll = rollJPA;
+                    result.objects.add(roll);
+                }
+                result.correct = true;
+            }
+
         } catch (Exception ex) {
             result.correct = false;
-            result.errorMessage = ex.getMessage();
+            result.errorMessage = ex.getLocalizedMessage();
             result.ex = ex;
         }
-
         return result;
     }
 
     @Override
     public Result GetPais() {
         Result result = new Result();
-
         try {
-            List<Pais> paises = entityManager.createQuery("FROM Pais", Pais.class).getResultList();
-            result.objects = new ArrayList<>(paises);
-            result.correct = true;
+            TypedQuery<Pais> paisesQuery = entityManager.createQuery(
+                    "FROM Pais", Pais.class);
+
+            List<Pais> paises = paisesQuery.getResultList();
+            result.objects = new ArrayList<>();
+
+            if (!paises.isEmpty() && paises != null) {
+                for (Pais paisJPA : paises) {
+                    Pais pais = paisJPA;
+                    result.objects.add(pais);
+                }
+                result.correct = true;
+            }
+
         } catch (Exception ex) {
             result.correct = false;
-            result.errorMessage = ex.getMessage();
+            result.errorMessage = ex.getLocalizedMessage();
             result.ex = ex;
         }
-
         return result;
     }
 
     @Override
     public Result GetEstado(int idPais) {
         Result result = new Result();
-
         try {
-            List<Estado> estados = entityManager.createQuery(
-                    "FROM Estado e WHERE e.Pais.idPais = :idPais", Estado.class)
-                    .setParameter("idPais", idPais)
-                    .getResultList();
+            TypedQuery<Estado> estadosQuery = entityManager.createQuery("FROM Estado WHERE Pais.idPais = :idPais", Estado.class);
+            estadosQuery.setParameter("idPais", idPais);
 
-            result.objects = new ArrayList<>(estados);
-            result.correct = true;
+            List<Estado> estados = estadosQuery.getResultList();
+            result.objects = new ArrayList<>();
+
+            if (!estados.isEmpty() && estados != null) {
+                for (Estado estadoJPA : estados) {
+                    Estado estado = new Estado();
+                    estado = estadoJPA;
+                    result.objects.add(estado);
+                }
+                result.correct = true;
+            }
 
         } catch (Exception ex) {
             result.correct = false;
-            result.errorMessage = ex.getMessage();
+            result.errorMessage = ex.getLocalizedMessage();
             result.ex = ex;
         }
-
         return result;
     }
 
     @Override
     public Result GetMunicipio(int idEstado) {
         Result result = new Result();
-
         try {
+            TypedQuery<Municipio> municipiosQuery = entityManager.createQuery(
+                    "FROM Municipio WHERE Estado.idEstado = :idEstado", Municipio.class);
+            municipiosQuery.setParameter("idEstado", idEstado);
 
-            List<Municipio> municipios = entityManager.createQuery(
-                    "FROM Municipio m WHERE m.Estado.idEstado = :idEstado", Municipio.class)
-                    .setParameter("idEstado", idEstado)
-                    .getResultList();
+            List<Municipio> municipios = municipiosQuery.getResultList();
+            result.objects = new ArrayList<>();
 
-            result.objects = new ArrayList<>(municipios);
-            result.correct = true;
+            if (!municipios.isEmpty() && municipios != null) {
+                for (Municipio municipioJPA : municipios) {
+                    Municipio municipio = municipioJPA;
+                    result.objects.add(municipio);
+                }
+                result.correct = true;
+            }
 
         } catch (Exception ex) {
             result.correct = false;
             result.errorMessage = ex.getLocalizedMessage();
             result.ex = ex;
         }
-
         return result;
     }
 
     @Override
     public Result GetColonia(int idMunicipio) {
         Result result = new Result();
-
         try {
+            TypedQuery<Colonia> coloniasQuery = entityManager.createQuery(
+                    "FROM Colonia WHERE Municipio.idMunicipio = :idMunicipio", Colonia.class);
+            coloniasQuery.setParameter("idMunicipio", idMunicipio);
 
-            List<Colonia> colonias = entityManager.createQuery(
-                    "FROM Colonia c WHERE c.Municipio.idMunicipio = :idMunicipio", Colonia.class)
-                    .setParameter("idMunicipio", idMunicipio)
-                    .getResultList();
+            List<Colonia> colonias = coloniasQuery.getResultList();
+            result.objects = new ArrayList<>();
 
-            result.objects = new ArrayList<>(colonias);
-            result.correct = true;
+            if (!colonias.isEmpty() && colonias != null) {
+                for (Colonia coloniaJPA : colonias) {
+                    Colonia colonia = coloniaJPA;
+                    result.objects.add(colonia);
+                }
+                result.correct = true;
+            }
 
         } catch (Exception ex) {
             result.correct = false;
             result.errorMessage = ex.getLocalizedMessage();
             result.ex = ex;
         }
-
         return result;
     }
 
@@ -139,5 +170,4 @@ public class GetJPADAOImplementation implements IGetJPADAO {
 //        }
 //        return result;
 //    }
-
 }

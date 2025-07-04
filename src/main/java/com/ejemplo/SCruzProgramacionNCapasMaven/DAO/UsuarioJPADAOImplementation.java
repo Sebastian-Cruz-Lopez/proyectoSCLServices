@@ -10,9 +10,22 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.Path;
 import jakarta.transaction.Transactional;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.security.MessageDigest;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -22,41 +35,72 @@ public class UsuarioJPADAOImplementation implements IUsuarioJPADAO {
     @Autowired
     private EntityManager entityManager;
 
+    //TERMINADO
     @Transactional
     @Override
     public Result Add(UsuarioDireccion usuarioDireccion) {
         Result result = new Result();
 
         try {
-            Usuario usuarioJPA = new Usuario();
-
-            usuarioJPA.setNombre(usuarioDireccion.Usuario.getNombre());
-            usuarioJPA.setApellidoPaterno(usuarioDireccion.Usuario.getApellidoPaterno());
-            usuarioJPA.setApellidoMaterno(usuarioDireccion.Usuario.getApellidoMaterno());
-            usuarioJPA.setFechaNacimiento(usuarioDireccion.Usuario.getFechaNacimiento());
-            usuarioJPA.setTelefono(usuarioDireccion.Usuario.getTelefono());
-            usuarioJPA.setEmail(usuarioDireccion.Usuario.getEmail());
-            usuarioJPA.setUsername(usuarioDireccion.Usuario.getUsername());
-            usuarioJPA.setPassword(usuarioDireccion.Usuario.getPassword());
-            usuarioJPA.setSexo(usuarioDireccion.Usuario.getSexo());
-            usuarioJPA.setCelular(usuarioDireccion.Usuario.getCelular());
-            usuarioJPA.setCURP(usuarioDireccion.Usuario.getCURP());
-
-            usuarioJPA.Roll = new Roll();
-            usuarioJPA.Roll.setIdRoll(usuarioDireccion.Usuario.Roll.getIdRoll());
-            usuarioJPA.setImagen(usuarioDireccion.Usuario.getImagen());
-            usuarioJPA.setEstatus(usuarioDireccion.Usuario.getEstatus());
+            Usuario usuarioJPA = usuarioDireccion.Usuario;
 
             entityManager.persist(usuarioJPA);
             entityManager.flush();
-            Direccion direccion = new Direccion();
-            direccion.setCalle(usuarioDireccion.Direccion.getCalle());
-            direccion.setNumeroInterior(usuarioDireccion.Direccion.getNumeroInterior());
-            direccion.setNumeroExterior(usuarioDireccion.Direccion.getNumeroExterior());
-            direccion.Colonia = new Colonia();
-            direccion.Colonia.setIdColonia(usuarioDireccion.Direccion.Colonia.getIdColonia());
-            direccion.usuario.setIdUsuario(0);
+
+            Direccion direccion = usuarioDireccion.Direccion;
+            direccion.Usuario = new Usuario();
+            direccion.Usuario.setIdUsuario(usuarioJPA.getIdUsuario());
+
             entityManager.persist(direccion);
+
+            result.correct = true;
+
+        } catch (Exception ex) {
+            result.objects = null;
+            result.correct = false;
+            result.errorMessage = ex.getLocalizedMessage();
+            result.ex = ex;
+        }
+
+        return result;
+
+    }
+
+    //TERMINADO
+    @Transactional
+    @Override
+    public Result DeleteUsuario(int idUsuario) {
+        Result result = new Result();
+        try {
+            Query deleteDirecciones = entityManager.createQuery("DELETE FROM Direccion d WHERE d.usuario.idUsuario = :idUsuario");
+            deleteDirecciones.setParameter("idUsuario", idUsuario);
+            deleteDirecciones.executeUpdate();
+
+            Query deleteUsuario = entityManager.createQuery("DELETE FROM Usuario u WHERE u.idUsuario = :idUsuario");
+            deleteUsuario.setParameter("idUsuario", idUsuario);
+            deleteUsuario.executeUpdate();
+
+            result.correct = true;
+
+        } catch (Exception ex) {
+            result.correct = false;
+            result.errorMessage = ex.getLocalizedMessage();
+            result.ex = ex;
+        }
+        return result;
+    }
+
+    //FALTA AGREGARLO A LA VISTA
+    @Transactional
+    @Override
+    public Result DeleteDireccion(int idUsuario, int idDireccion) {
+        Result result = new Result();
+        try {
+            entityManager.find(Direccion.class, idDireccion);
+
+            Query deleteDireccion = entityManager.createQuery("DELETE FROM Direccion d WHERE d.idDireccion = :idDireccion");
+            deleteDireccion.setParameter("idDireccion", idDireccion);
+            deleteDireccion.executeUpdate();
 
             result.correct = true;
         } catch (Exception ex) {
@@ -64,101 +108,27 @@ public class UsuarioJPADAOImplementation implements IUsuarioJPADAO {
             result.errorMessage = ex.getLocalizedMessage();
             result.ex = ex;
         }
-
-        return result;
-
-    }
-
-    @Transactional
-    @Override
-    public Result DeleteUsuario(int idUsuario) {
-        Result result = new Result();
-
-        try {
-            Usuario usuario = entityManager.find(Usuario.class, idUsuario);
-
-            if (usuario != null) {
-                // eliminar direcciones manualmente 
-                Query query = entityManager.createQuery(
-                        "DELETE FROM Direccion d WHERE d.usuario.idUsuario = :idUsuario"
-                );
-                query.setParameter("idUsuario", idUsuario);
-                query.executeUpdate();
-
-                // eliminar el usuario
-                entityManager.remove(usuario);
-
-                result.correct = true;
-            } else {
-                result.correct = false;
-                result.errorMessage = "Usuario no encontrado con el ID: " + idUsuario;
-            }
-
-        } catch (Exception ex) {
-            result.correct = false;
-            result.errorMessage = ex.getMessage();
-            result.ex = ex;
-        }
-
         return result;
     }
 
-    @Transactional
-    @Override
-    public Result DeleteDireccion(int idDireccion) {
-        Result result = new Result();
-
-        try {
-            Direccion direccion = entityManager.find(Direccion.class, idDireccion);
-
-            if (direccion != null) {
-                entityManager.remove(direccion);
-                result.correct = true;
-            } else {
-                result.correct = false;
-                result.errorMessage = "Dirección no encontrada con el ID: " + idDireccion;
-            }
-
-        } catch (Exception ex) {
-            result.correct = false;
-            result.errorMessage = ex.getMessage();
-            result.ex = ex;
-        }
-
-        return result;
-    }
-
+    //FALTA AGREGARLO A VISTA
     @Transactional
     @Override
     public Result UpdateUsario(UsuarioDireccion usuarioDireccion) {
         Result result = new Result();
 
         try {
+            Usuario usuario = usuarioDireccion.Usuario;
 
-            Usuario usuarioJPA = entityManager.find(Usuario.class, usuarioDireccion.Usuario.getIdUsuario());
-            if (usuarioJPA != null) {
-                usuarioJPA.setUsername(usuarioDireccion.Usuario.getUsername());
-                usuarioJPA.setNombre(usuarioDireccion.Usuario.getNombre());
-                usuarioJPA.setApellidoPaterno(usuarioDireccion.Usuario.getApellidoPaterno());
-                usuarioJPA.setApellidoMaterno(usuarioDireccion.Usuario.getApellidoMaterno());
-                usuarioJPA.setTelefono(usuarioDireccion.Usuario.getTelefono());
-                usuarioJPA.setEmail(usuarioDireccion.Usuario.getEmail());
-                usuarioJPA.setPassword(usuarioDireccion.Usuario.getPassword());
-                usuarioJPA.setSexo(usuarioDireccion.Usuario.getSexo());
-                usuarioJPA.setCelular(usuarioDireccion.Usuario.getCelular());
-                usuarioJPA.setCURP(usuarioDireccion.Usuario.getCURP());
-                usuarioJPA.Roll = new Roll();
-                usuarioJPA.Roll.setIdRoll(usuarioDireccion.Usuario.Roll.getIdRoll());
-                usuarioJPA.setImagen(usuarioDireccion.Usuario.getImagen());
-                usuarioJPA.setEstatus(usuarioDireccion.Usuario.getEstatus());
-
-                entityManager.merge(usuarioJPA);
-
-                result.correct = true;
-            } else {
+            if (usuario == null) {
                 result.correct = false;
-                result.errorMessage = "Usuario no encontrado";
+                result.errorMessage = "Datos del usuario inválidos.";
+                return result;
             }
+
+            entityManager.merge(usuario);
+
+            result.correct = true;
 
         } catch (Exception ex) {
             result.correct = false;
@@ -169,40 +139,36 @@ public class UsuarioJPADAOImplementation implements IUsuarioJPADAO {
         return result;
     }
 
+    //FALTA AGREGARLO A VISTA
     @Transactional
     @Override
-    public Result UpdateDireccion(UsuarioDireccion usuarioDireccion) {
+    public Result UpdateDireccion(int idUsuario, int idDireccion, Direccion direccionJSON) {
         Result result = new Result();
 
         try {
-            Direccion direccionJPA = entityManager.find(Direccion.class, usuarioDireccion.Direccion.getIdDireccion());
+            Direccion direccion = entityManager.find(Direccion.class, idDireccion);
 
-            if (direccionJPA != null) {
-                direccionJPA.setCalle(usuarioDireccion.Direccion.getCalle());
-                direccionJPA.setNumeroInterior(usuarioDireccion.Direccion.getNumeroInterior());
-                direccionJPA.setNumeroExterior(usuarioDireccion.Direccion.getNumeroExterior());
+            direccion.setCalle(direccionJSON.getCalle());
+            direccion.setNumeroInterior(direccionJSON.getNumeroInterior());
+            direccion.setNumeroExterior(direccionJSON.getNumeroExterior());
 
-                direccionJPA.Colonia = new Colonia();
-                direccionJPA.Colonia.setIdColonia(usuarioDireccion.Direccion.Colonia.getIdColonia());
-                direccionJPA.Colonia.setCodigoPostal(usuarioDireccion.Direccion.Colonia.getCodigoPostal());
-
-                entityManager.merge(direccionJPA);
-
-                result.correct = true;
-            } else {
-                result.correct = false;
-                result.errorMessage = "Dirección no encontrada con el ID: " + usuarioDireccion.Direccion.getIdDireccion();
+            if (direccionJSON.Colonia != null) {
+                direccion.Colonia = entityManager.getReference(Colonia.class, direccionJSON.Colonia.getIdColonia());
             }
 
+            entityManager.merge(direccion);
+
+            result.correct = true;
         } catch (Exception ex) {
             result.correct = false;
-            result.errorMessage = ex.getLocalizedMessage();
+            result.errorMessage = ex.getMessage();
             result.ex = ex;
         }
 
         return result;
     }
 
+    //TERMINADO
     @Override
     public Result GetAll() {
         Result result = new Result();
@@ -210,16 +176,17 @@ public class UsuarioJPADAOImplementation implements IUsuarioJPADAO {
 
         try {
 
-            TypedQuery<Usuario> usuariosQuery = entityManager.createQuery("FROM Usuario", Usuario.class);
+            TypedQuery<Usuario> usuariosQuery = entityManager.createQuery("FROM Usuario ORDER BY idUsuario ASC", Usuario.class
+            );
 
             List<Usuario> usuarioJPA = usuariosQuery.getResultList();
 
             for (Usuario usuario : usuarioJPA) {
                 UsuarioDireccion usuarioDireccion = new UsuarioDireccion();
                 usuarioDireccion.Usuario = usuario;
-                
 
-                TypedQuery<Direccion> direccionesQuery = entityManager.createQuery("FROM Direccion WHERE usuario.idUsuario = :idUsuario", Direccion.class);
+                TypedQuery<Direccion> direccionesQuery = entityManager.createQuery("FROM Direccion WHERE Usuario.idUsuario = :idUsuario", Direccion.class
+                );
                 direccionesQuery.setParameter("idUsuario", usuario.getIdUsuario());
                 List<Direccion> direccionesJPA = direccionesQuery.getResultList();
 
@@ -243,10 +210,10 @@ public class UsuarioJPADAOImplementation implements IUsuarioJPADAO {
         return result;
     }
 
+    //FALTA AGREGARLO A LA VISTA
     @Override
     public Result GetByid(int idUsuario) {
         Result result = new Result();
-
         try {
             Usuario usuarioJPA = entityManager.find(Usuario.class, idUsuario);
 
@@ -256,94 +223,37 @@ public class UsuarioJPADAOImplementation implements IUsuarioJPADAO {
                 return result;
             }
 
-            usuarioJPA.getDirecciones().size();
-
-            UsuarioDireccion usuarioDireccion = new UsuarioDireccion();
-            usuarioDireccion.Usuario = new com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Usuario();
-
-            usuarioDireccion.Usuario.setIdUsuario(usuarioJPA.getIdUsuario());
-            usuarioDireccion.Usuario.setNombre(usuarioJPA.getNombre());
-            usuarioDireccion.Usuario.setApellidoPaterno(usuarioJPA.getApellidoPaterno());
-            usuarioDireccion.Usuario.setApellidoMaterno(usuarioJPA.getApellidoMaterno());
-            usuarioDireccion.Usuario.setFechaNacimiento(usuarioJPA.getFechaNacimiento());
-            usuarioDireccion.Usuario.setTelefono(usuarioJPA.getTelefono());
-            usuarioDireccion.Usuario.setEmail(usuarioJPA.getEmail());
-            usuarioDireccion.Usuario.setUsername(usuarioJPA.getUsername());
-            usuarioDireccion.Usuario.setPassword(usuarioJPA.getPassword());
-            usuarioDireccion.Usuario.setSexo(usuarioJPA.getSexo());
-            usuarioDireccion.Usuario.setCelular(usuarioJPA.getCelular());
-            usuarioDireccion.Usuario.setCURP(usuarioJPA.getCURP());
-            usuarioDireccion.Usuario.setImagen(usuarioJPA.getImagen());
-            usuarioDireccion.Usuario.setEstatus(usuarioJPA.getEstatus());
-
-            usuarioDireccion.Usuario.Roll = new com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Roll();
-            usuarioDireccion.Usuario.Roll.setIdRoll(usuarioJPA.Roll.getIdRoll());
-            usuarioDireccion.Usuario.Roll.setRoll(usuarioJPA.Roll.getRoll());
-
-            usuarioDireccion.Direcciones = new ArrayList<>();
-
-            for (com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Direccion direccionJPA : usuarioJPA.getDirecciones()) {
-                com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Direccion direccion = new com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Direccion();
-
-                direccion.setIdDireccion(direccionJPA.getIdDireccion());
-                direccion.setCalle(direccionJPA.getCalle());
-                direccion.setNumeroInterior(direccionJPA.getNumeroInterior());
-                direccion.setNumeroExterior(direccionJPA.getNumeroExterior());
-
-                direccion.Colonia = new com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Colonia();
-                direccion.Colonia.setIdColonia(direccionJPA.Colonia.getIdColonia());
-                direccion.Colonia.setNombre(direccionJPA.Colonia.getNombre());
-                direccion.Colonia.setCodigoPostal(direccionJPA.Colonia.getCodigoPostal());
-
-                direccion.Colonia.Municipio = new com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Municipio();
-                direccion.Colonia.Municipio.setIdMunicipio(direccionJPA.Colonia.Municipio.getIdMunicipio());
-                direccion.Colonia.Municipio.setNombre(direccionJPA.Colonia.Municipio.getNombre());
-
-                direccion.Colonia.Municipio.Estado = new com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Estado();
-                direccion.Colonia.Municipio.Estado.setIdEstado(direccionJPA.Colonia.Municipio.Estado.getIdEstado());
-                direccion.Colonia.Municipio.Estado.setNombre(direccionJPA.Colonia.Municipio.Estado.getNombre());
-
-                direccion.Colonia.Municipio.Estado.Pais = new com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Pais();
-                direccion.Colonia.Municipio.Estado.Pais.setIdPais(direccionJPA.Colonia.Municipio.Estado.Pais.getIdPais());
-                direccion.Colonia.Municipio.Estado.Pais.setNombre(direccionJPA.Colonia.Municipio.Estado.Pais.getNombre());
-
-                usuarioDireccion.Direcciones.add(direccion);
-            }
+            usuarioJPA.getDirecciones().size(); // forza el fetch
 
             result.correct = true;
-            result.object = usuarioDireccion;
+            result.object = usuarioJPA; // regresa la entidad JPA directamente
 
         } catch (Exception ex) {
             result.correct = false;
             result.errorMessage = ex.getLocalizedMessage();
             result.ex = ex;
         }
-
         return result;
     }
 
+    //FALTA AGREGAR A VISTA
     @Transactional
     @Override
     public Result AddDireccion(UsuarioDireccion usuarioDireccion) {
         Result result = new Result();
 
         try {
-            Direccion direccionJPA = new Direccion();
+            Usuario usuario = entityManager.find(Usuario.class, usuarioDireccion.Usuario.getIdUsuario());
 
-            direccionJPA.setCalle(usuarioDireccion.Direccion.getCalle());
-            direccionJPA.setNumeroInterior(usuarioDireccion.Direccion.getNumeroInterior());
-            direccionJPA.setNumeroExterior(usuarioDireccion.Direccion.getNumeroExterior());
+            if (usuario == null) {
+                result.correct = false;
+                result.errorMessage = "Usuario no encontrado";
+                return result;
+            }
 
-            Colonia coloniaJPA = new Colonia();
-            coloniaJPA.setIdColonia(usuarioDireccion.Direccion.Colonia.getIdColonia());
-            direccionJPA.setColonia(coloniaJPA);
-
-            Usuario usuarioJPA = new Usuario();
-            usuarioJPA.setIdUsuario(usuarioDireccion.Usuario.getIdUsuario());
-            direccionJPA.usuario.setIdUsuario(0);
-
-            entityManager.persist(direccionJPA);
-            entityManager.flush();
+            Direccion direccion = usuarioDireccion.Direccion;
+            direccion.Usuario = usuario;
+            entityManager.persist(direccion);
 
             result.correct = true;
 
@@ -356,56 +266,32 @@ public class UsuarioJPADAOImplementation implements IUsuarioJPADAO {
         return result;
     }
 
+    //FALTA AGREGARLO A VISTA
+    @Transactional
     @Override
     public Result GetDireccionByid(int idDireccion) {
         Result result = new Result();
 
         try {
-            Direccion direccionEntity = entityManager.createQuery(
-                    "SELECT d FROM Direccion d "
-                    + "JOIN FETCH d.Colonia c "
-                    + "JOIN FETCH c.Municipio m "
-                    + "JOIN FETCH m.Estado e "
-                    + "JOIN FETCH e.Pais p "
-                    + "WHERE d.idDireccion = :idDireccion", Direccion.class)
-                    .setParameter("idDireccion", idDireccion)
-                    .getSingleResult();
+            Direccion direccionJPA = entityManager.find(Direccion.class, idDireccion);
 
-            com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Direccion direccionML = new com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Direccion();
+            direccionJPA.Colonia.getNombre();
+            direccionJPA.Colonia.Municipio.getNombre();
+            direccionJPA.Colonia.Municipio.Estado.getNombre();
+            direccionJPA.Colonia.Municipio.Estado.Pais.getNombre();
 
-            direccionML.setIdDireccion(direccionEntity.getIdDireccion());
-            direccionML.setCalle(direccionEntity.getCalle());
-            direccionML.setNumeroInterior(direccionEntity.getNumeroInterior());
-            direccionML.setNumeroExterior(direccionEntity.getNumeroExterior());
-
-            direccionML.Colonia = new com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Colonia();
-            direccionML.Colonia.setIdColonia(direccionEntity.Colonia.getIdColonia());
-            direccionML.Colonia.setNombre(direccionEntity.Colonia.getNombre());
-            direccionML.Colonia.setCodigoPostal(direccionEntity.Colonia.getCodigoPostal());
-
-            direccionML.Colonia.Municipio = new com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Municipio();
-            direccionML.Colonia.Municipio.setIdMunicipio(direccionEntity.Colonia.Municipio.getIdMunicipio());
-            direccionML.Colonia.Municipio.setNombre(direccionEntity.Colonia.Municipio.getNombre());
-
-            direccionML.Colonia.Municipio.Estado = new com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Estado();
-            direccionML.Colonia.Municipio.Estado.setIdEstado(direccionEntity.Colonia.Municipio.Estado.getIdEstado());
-            direccionML.Colonia.Municipio.Estado.setNombre(direccionEntity.Colonia.Municipio.Estado.getNombre());
-
-            direccionML.Colonia.Municipio.Estado.Pais = new com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Pais();
-            direccionML.Colonia.Municipio.Estado.Pais.setIdPais(direccionEntity.Colonia.Municipio.Estado.Pais.getIdPais());
-            direccionML.Colonia.Municipio.Estado.Pais.setNombre(direccionEntity.Colonia.Municipio.Estado.Pais.getNombre());
-
-            result.object = direccionML;
-            
             result.correct = true;
+            result.object = direccionJPA;
 
         } catch (Exception ex) {
             result.correct = false;
-            result.errorMessage = ex.getMessage();
+            result.errorMessage = ex.getLocalizedMessage();
             result.ex = ex;
         }
 
         return result;
     }
+
+    
 
 }

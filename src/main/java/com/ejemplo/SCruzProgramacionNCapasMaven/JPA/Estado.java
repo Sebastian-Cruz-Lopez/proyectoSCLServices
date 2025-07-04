@@ -24,14 +24,6 @@ public class Estado {
     @ManyToOne
     public Pais Pais;
 
-    public Pais getPais() {
-        return Pais;
-    }
-
-    public void setPais(Pais Pais) {
-        this.Pais = Pais;
-    }
-
     public int getIdEstado() {
         return idEstado;
     }

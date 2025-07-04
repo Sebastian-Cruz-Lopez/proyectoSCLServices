@@ -70,7 +70,7 @@ public class Usuario {
     private int Estatus;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "usuario", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "Usuario", fetch = FetchType.LAZY)
     private List<Direccion> direcciones;
 
     public List<Direccion> getDirecciones() {
@@ -80,8 +80,6 @@ public class Usuario {
     public void setDirecciones(List<Direccion> direcciones) {
         this.direcciones = direcciones;
     }
-    
-    
 
     public int getIdUsuario() {
         return idUsuario;

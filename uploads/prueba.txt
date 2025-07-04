@@ -1,0 +1,3 @@
+|Nombre|ApellidoPaterno|ApellidoMaterno|FechaNacimiento|Telelefono|Email|Username|Password|Sexo|Celular|CURP|IdRoll|Imagen|Estatus|Calle|NumeroInterior|NumeroExterior|IdColonia
+|Juan|Pérez|López|2000-01-01|5511223344|juan@mail.com|juanito|pass123|H|5511223345|CURP1234|1|imagen.jpg|1|Calle Falsa|12|34|5
+|Ana|Martínez|Gómez|1995-03-15|5522334455|ana@mail.com|anita|pass456|M|5522334466|CURP5678|2|imagen2.jpg|1|Otra Calle|56|78|8

@@ -24,14 +24,6 @@ public class Municipio {
     @ManyToOne
     public Estado Estado;
 
-    public Estado getEstado() {
-        return Estado;
-    }
-
-    public void setEstado(Estado Estado) {
-        this.Estado = Estado;
-    }
-
     public int getIdMunicipio() {
         return idMunicipio;
     }

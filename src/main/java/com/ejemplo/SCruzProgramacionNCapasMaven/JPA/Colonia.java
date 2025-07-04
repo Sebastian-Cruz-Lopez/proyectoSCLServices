@@ -35,14 +35,6 @@ public class Colonia {
         this.idColonia = idColonia;
     }
 
-    public Municipio getMunicipio() {
-        return Municipio;
-    }
-
-    public void setMunicipio(Municipio Municipio) {
-        this.Municipio = Municipio;
-    }
-
     public String getNombre() {
         return Nombre;
     }

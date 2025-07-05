@@ -2,6 +2,9 @@ package com.ejemplo.SCruzProgramacionNCapasMaven.DAO;
 
 import com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Colonia;
 import com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Direccion;
+import com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Estado;
+import com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Municipio;
+import com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Pais;
 import com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Roll;
 import com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Usuario;
 import com.ejemplo.SCruzProgramacionNCapasMaven.JPA.Result;
@@ -292,6 +295,38 @@ public class UsuarioJPADAOImplementation implements IUsuarioJPADAO {
         return result;
     }
 
-    
+    @Override
+    public Result GetColoniaByCP(String codigoPostal) {
+        Result result = new Result();
+        result.objects = new ArrayList<>(); 
+        try {
+            TypedQuery<Direccion> direccionQuery = entityManager.createQuery(
+                    "FROM Direccion d WHERE d.Colonia.CodigoPostal = :codigoPostal", Direccion.class);
+            direccionQuery.setParameter("codigoPostal", codigoPostal);
+
+            List<Direccion> direcciones = direccionQuery.getResultList();
+            if (direcciones != null) {
+                for (Direccion direccionesJPA : direcciones) {
+                    Direccion direccion = new Direccion();
+                    direccion.Colonia = new Colonia();
+                    direccion.Colonia = direccionesJPA.Colonia;
+                    direccion.Colonia.Municipio = new Municipio();
+                    direccion.Colonia.Municipio = direccionesJPA.Colonia.Municipio;
+                    direccion.Colonia.Municipio.Estado = new Estado();
+                    direccion.Colonia.Municipio.Estado = direccionesJPA.Colonia.Municipio.Estado;
+                    direccion.Colonia.Municipio.Estado.Pais = new Pais();
+                    direccion.Colonia.Municipio.Estado.Pais = direccionesJPA.Colonia.Municipio.Estado.Pais;
+
+                    result.objects.add(direccion);
+                }
+                result.correct = true;
+            }
+        } catch (Exception ex) {
+            result.correct = false;
+            result.errorMessage = ex.getLocalizedMessage();
+            result.ex = ex;
+        }
+        return result;
+    }
 
 }

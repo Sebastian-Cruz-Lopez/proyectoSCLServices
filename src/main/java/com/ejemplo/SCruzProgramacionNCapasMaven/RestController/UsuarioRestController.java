@@ -226,7 +226,7 @@ public class UsuarioRestController {
     public ResponseEntity<?> GetRoll() {
         Result result = getJPADAOImplementation.GetRoll();
         if (result.correct) {
-            return ResponseEntity.ok(result.objects);
+            return ResponseEntity.ok(result);
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(result.errorMessage);
         }
@@ -269,6 +269,16 @@ public class UsuarioRestController {
             return ResponseEntity.ok(result.objects);
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(result.errorMessage);
+        }
+    }
+    
+    @GetMapping("/bycp/{codigoPostal}")
+    public ResponseEntity getColoniasByCP(@PathVariable String codigoPostal) {
+        Result result = usuarioJPADAOImplementation.GetColoniaByCP(codigoPostal);
+        if (result.correct) {
+            return ResponseEntity.ok(result.objects);
+        } else {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result.errorMessage);
         }
     }
 
